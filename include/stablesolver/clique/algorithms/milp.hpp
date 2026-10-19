@@ -3,6 +3,7 @@
 #include "stablesolver/clique/solution.hpp"
 
 #include "mathoptsolverscmake/mathopt.hpp"
+#include <iomanip>
 
 namespace stablesolver
 {

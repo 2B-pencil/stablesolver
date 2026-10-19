@@ -3,6 +3,7 @@
 #include "stablesolver/stable/algorithm.hpp"
 
 #include "mathoptsolverscmake/mathopt.hpp"
+#include <iomanip>
 
 namespace stablesolver
 {
