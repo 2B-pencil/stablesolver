@@ -3,6 +3,7 @@
 #include "stablesolver/stable/algorithm_formatter.hpp"
 
 #include "localsearchsolver/best_first_local_search.hpp"
+#include <numeric>
 
 using namespace stablesolver::stable;
 

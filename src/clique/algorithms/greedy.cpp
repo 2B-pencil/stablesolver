@@ -3,6 +3,7 @@
 #include "stablesolver/clique/algorithm_formatter.hpp"
 
 #include "optimizationtools/containers/doubly_indexed_map.hpp"
+#include <numeric>
 
 using namespace stablesolver::clique;
 

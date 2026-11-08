@@ -3,6 +3,7 @@
 #include "stablesolver/stable/algorithm_formatter.hpp"
 
 #include "optimizationtools/containers/indexed_binary_heap.hpp"
+#include <numeric>
 
 using namespace stablesolver::stable;
 
