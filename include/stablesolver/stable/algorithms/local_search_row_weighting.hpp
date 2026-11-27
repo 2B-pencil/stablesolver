@@ -1,6 +1,7 @@
 #pragma once
 
 #include "stablesolver/stable/algorithm.hpp"
+#include <iomanip>
 
 namespace stablesolver
 {
