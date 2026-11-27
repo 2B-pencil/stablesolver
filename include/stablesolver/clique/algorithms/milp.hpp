@@ -40,5 +40,9 @@ const Output milp(
         const Instance& instance,
         const MilpParameters& parameters = {});
 
+void write_mps(
+        const Instance& instance,
+        const std::string& output_path);
+
 }
 }

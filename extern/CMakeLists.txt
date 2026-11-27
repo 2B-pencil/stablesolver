@@ -27,7 +27,7 @@ set(OPTIMIZATIONTOOLS_BUILD_TEST OFF)
 FetchContent_Declare(
     optimizationtools
     GIT_REPOSITORY https://github.com/fontanf/optimizationtools.git
-    GIT_TAG e086ec4cfcc9a885cd63f579a99ea5e8f4737005)
+    GIT_TAG cf0e77052f300ca90eb533d59526955e6f8c8858)
     #SOURCE_DIR "${PROJECT_SOURCE_DIR}/../optimizationtools/")
 FetchContent_MakeAvailable(optimizationtools)
 
@@ -44,7 +44,7 @@ endif()
 FetchContent_Declare(
     mathoptsolverscmake
     GIT_REPOSITORY https://github.com/fontanf/mathoptsolverscmake.git
-    GIT_TAG c312e55d551edd57e98edfd24d4e2330abdcbbd2
+    GIT_TAG 9dfd26a4cb4c58cb30045af22bda667b303887c3
     #SOURCE_DIR "${PROJECT_SOURCE_DIR}/../mathoptsolverscmake/"
     EXCLUDE_FROM_ALL)
 FetchContent_MakeAvailable(mathoptsolverscmake)

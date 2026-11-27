@@ -11,16 +11,19 @@
 #ifdef XPRESS_FOUND
 #include "mathoptsolverscmake/mathopt_xpress.hpp"
 #endif
+#include "mathoptsolverscmake/mathopt_mps.hpp"
 
 using namespace stablesolver::clique;
 
 namespace
 {
 
+template <typename Graph>
 mathoptsolverscmake::MathOptModel create_milp_model(
+        const Graph& concrete_graph,
         const Instance& instance)
 {
-    const optimizationtools::AbstractGraph* graph = instance.graph();
+    const Graph* graph = &concrete_graph;
 
     int number_of_variables = graph->number_of_vertices() + 1;
     int number_of_constraints = graph->number_of_vertices() + 1;
@@ -96,11 +99,20 @@ mathoptsolverscmake::MathOptModel create_milp_model(
     return model;
 }
 
+mathoptsolverscmake::MathOptModel create_milp_model(
+        const Instance& instance)
+{
+    return FUNCTION_WITH_GRAPH(
+            create_milp_model,
+            *instance.graph(),
+            instance);
+}
+
 Solution retrieve_solution(
         const Instance& instance,
         const std::vector<double>& milp_solution)
 {
-    const optimizationtools::AbstractGraph* graph = instance.graph();
+    const optimizationtools::Graph* graph = instance.graph();
     Solution solution(instance);
     for (VertexId vertex_id = 0;
             vertex_id < graph->number_of_vertices();
@@ -169,8 +181,10 @@ CbcEventHandler::CbcAction EventHandler::event(CbcEvent which_event)
     if (!output_.solution.feasible()
             || output_.solution.weight() < milp_objective_value) {
         std::vector<double> milp_solution = mathoptsolverscmake::get_solution(cbc_model);
-        Solution solution = retrieve_solution(instance_, milp_solution);
-        algorithm_formatter_.update_solution(solution, "node " + std::to_string(number_of_nodes));
+        if (!milp_solution.empty()) {
+            Solution solution = retrieve_solution(instance_, milp_solution);
+            algorithm_formatter_.update_solution(solution, "node " + std::to_string(number_of_nodes));
+        }
     }
 
     // Retrieve bound.
@@ -249,13 +263,12 @@ const Output stablesolver::clique::milp(
 
     if (parameters.solver == mathoptsolverscmake::SolverName::Cbc) {
 #ifdef CBC_FOUND
-        OsiCbcSolverInterface osi_solver;
-        CbcModel cbc_model(osi_solver);
+        mathoptsolverscmake::CbcModel cbc_model;
         mathoptsolverscmake::reduce_printout(cbc_model);
         mathoptsolverscmake::set_time_limit(cbc_model, parameters.timer.remaining_time());
         mathoptsolverscmake::load(cbc_model, milp_model);
         EventHandler cbc_event_handler(instance, parameters, milp_model, output, algorithm_formatter);
-        cbc_model.passInEventHandler(&cbc_event_handler);
+        cbc_model.model.passInEventHandler(&cbc_event_handler);
         mathoptsolverscmake::solve(cbc_model);
         milp_solution = mathoptsolverscmake::get_solution(cbc_model);
         milp_bound = mathoptsolverscmake::get_bound(cbc_model);
@@ -346,4 +359,12 @@ const Output stablesolver::clique::milp(
 
     algorithm_formatter.end();
     return output;
+}
+
+void stablesolver::clique::write_mps(
+        const Instance& instance,
+        const std::string& output_path)
+{
+    mathoptsolverscmake::MathOptModel milp_model = create_milp_model(instance);
+    mathoptsolverscmake::write_mps(milp_model, output_path);
 }

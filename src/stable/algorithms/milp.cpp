@@ -12,6 +12,7 @@
 #ifdef XPRESS_FOUND
 #include "mathoptsolverscmake/mathopt_xpress.hpp"
 #endif
+#include "mathoptsolverscmake/mathopt_mps.hpp"
 
 using namespace stablesolver::stable;
 
@@ -182,8 +183,8 @@ mathoptsolverscmake::MathOptModel create_milp_model_3(
                 }
             }
         }
-        std::shared_ptr<optimizationtools::AbstractGraph> graph
-            = std::shared_ptr<optimizationtools::AdjacencyListGraph>(
+        std::shared_ptr<const optimizationtools::AdjacencyListGraph> graph
+            = std::shared_ptr<const optimizationtools::AdjacencyListGraph>(
                     new optimizationtools::AdjacencyListGraph(graph_builder.build()));
         stablesolver::clique::Instance clique_instance(graph);
         // Solve
@@ -303,8 +304,10 @@ CbcEventHandler::CbcAction EventHandler::event(CbcEvent which_event)
     if (!output_.solution.feasible()
             || output_.solution.weight() < milp_objective_value) {
         std::vector<double> milp_solution = mathoptsolverscmake::get_solution(cbc_model);
-        Solution solution = retrieve_solution(instance_, milp_solution);
-        algorithm_formatter_.update_solution(solution, "node " + std::to_string(number_of_nodes));
+        if (!milp_solution.empty()) {
+            Solution solution = retrieve_solution(instance_, milp_solution);
+            algorithm_formatter_.update_solution(solution, "node " + std::to_string(number_of_nodes));
+        }
     }
 
     // Retrieve bound.
@@ -403,13 +406,12 @@ const Output milp(
 
     if (parameters.solver == mathoptsolverscmake::SolverName::Cbc) {
 #ifdef CBC_FOUND
-        OsiCbcSolverInterface osi_solver;
-        CbcModel cbc_model(osi_solver);
+        mathoptsolverscmake::CbcModel cbc_model;
         mathoptsolverscmake::reduce_printout(cbc_model);
         mathoptsolverscmake::set_time_limit(cbc_model, parameters.timer.remaining_time());
         mathoptsolverscmake::load(cbc_model, milp_model);
         EventHandler cbc_event_handler(instance, parameters, milp_model, output, algorithm_formatter);
-        cbc_model.passInEventHandler(&cbc_event_handler);
+        cbc_model.model.passInEventHandler(&cbc_event_handler);
         mathoptsolverscmake::solve(cbc_model);
         milp_solution = mathoptsolverscmake::get_solution(cbc_model);
         milp_bound = mathoptsolverscmake::get_bound(cbc_model);
@@ -504,7 +506,6 @@ const Output milp(
 
 void write_mps(
         const Instance& instance,
-        mathoptsolverscmake::SolverName solver,
         const std::string& output_path,
         int model_id)
 {
@@ -512,41 +513,7 @@ void write_mps(
         (model_id == 1)? create_milp_model_1(instance):
         (model_id == 2)? create_milp_model_2(instance):
         create_milp_model_3(instance);
-
-    if (solver == mathoptsolverscmake::SolverName::Cbc) {
-#ifdef CBC_FOUND
-        OsiCbcSolverInterface osi_solver;
-        CbcModel cbc_model(osi_solver);
-        mathoptsolverscmake::load(cbc_model, milp_model);
-        cbc_model.solver()->writeMps(output_path.c_str());
-#else
-        throw std::invalid_argument("");
-#endif
-
-    } else if (solver == mathoptsolverscmake::SolverName::Highs) {
-#ifdef HIGHS_FOUND
-        Highs highs;
-        mathoptsolverscmake::load(highs, milp_model);
-        highs.writeModel(output_path);
-#else
-        throw std::invalid_argument("");
-#endif
-
-    } else if (solver == mathoptsolverscmake::SolverName::Xpress) {
-#ifdef XPRESS_FOUND
-        XPRSprob xpress_model;
-        XPRScreateprob(&xpress_model);
-        mathoptsolverscmake::load(xpress_model, milp_model);
-        mathoptsolverscmake::write_mps(xpress_model, "kpc.mps");
-        XPRSdestroyprob(xpress_model);
-#else
-        throw std::invalid_argument("");
-#endif
-
-    } else {
-        throw std::invalid_argument("");
-    }
-
+    mathoptsolverscmake::write_mps(milp_model, output_path);
 }
 
 }
@@ -574,24 +541,21 @@ const Output stablesolver::stable::milp_3(
 
 void stablesolver::stable::write_mps_1(
         const Instance& instance,
-        mathoptsolverscmake::SolverName solver,
         const std::string& output_path)
 {
-    return write_mps(instance, solver, output_path, 1);
+    return write_mps(instance, output_path, 1);
 }
 
 void stablesolver::stable::write_mps_2(
         const Instance& instance,
-        mathoptsolverscmake::SolverName solver,
         const std::string& output_path)
 {
-    return write_mps(instance, solver, output_path, 2);
+    return write_mps(instance, output_path, 2);
 }
 
 void stablesolver::stable::write_mps_3(
         const Instance& instance,
-        mathoptsolverscmake::SolverName solver,
         const std::string& output_path)
 {
-    return write_mps(instance, solver, output_path, 3);
+    return write_mps(instance, output_path, 3);
 }
